@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -23,38 +25,47 @@ public class DriverControlled extends OpMode {
     public double leftStickX = 0.00;
     public double leftStickY = 0.00;
     public double rightStickX = 0.00;
-    public int count = 0;
+    public boolean toggle = false;
+    public boolean prevA = false;
     private DcMotor leftFrontDrive = null;
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor armMotor = null;
+    private CRServo spinnyThing = null;
+    private Servo toggleServo = null;
 
     @Override
     public void init() {
         telemetry.addData("Status", "Initialized");
 
-        /* TODO: Choose ports and stick with them. Probably plug them in based on the existing code.
-         * This expects the motors to be plugged in in the following configuration:
-         * - left_front_drive:  Port ?
-         * - left_back_drive:   Port ?
-         * - right_front_drive: Port ?
-         * - right_back_drive:  Port ?
+        /* This expects the motors to be plugged in in the following configuration:
+         * - left_front_drive:  Port 0
+         * - left_back_drive:   Port 1
+         * - right_front_drive: Port 2
+         * - right_back_drive:  Port 3
          */
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        // TODO: Come up with solution to make this more dynamic.
+        // TODO: Come up with solution to make this more dynamic. (External hardware class)
         leftFrontDrive = hardwareMap.get(DcMotor.class, "left_front_drive");
         leftBackDrive = hardwareMap.get(DcMotor.class, "left_back_drive");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back_drive");
+        armMotor = hardwareMap.get(DcMotor.class, "arm");
+        spinnyThing = hardwareMap.get(CRServo.class, "spinny_thing");
+        toggleServo = hardwareMap.get(Servo.class, "toggle_servo");
+
 
         // Flip it if the wheel is going an unexpected direction.
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+
+        armMotor.setDirection(DcMotor.Direction.FORWARD);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -83,6 +94,8 @@ public class DriverControlled extends OpMode {
         double rightFrontPower;
         double leftBackPower;
         double rightBackPower;
+        double spinPower;
+        double armPower = 0.0;
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // - This uses basic math to combine motions and is easier to drive straight.
@@ -101,13 +114,41 @@ public class DriverControlled extends OpMode {
         leftBackPower = axial - lateral + yaw;
         rightBackPower = axial + lateral - yaw;
 
+        // Good place to handle any other logic for things like claws or arms.
+
+        System.out.println("Setting spin power");
+        // Spin power
+        if (gamepad1.right_bumper) spinPower = 1;
+        else if (gamepad1.left_bumper) spinPower = -1;
+        else spinPower = 0;
+        spinnyThing.setPower(spinPower);
+
+        System.out.println("Setting arm power");
+        // Dpad up and down for the arm
+        if (gamepad1.dpad_up) {
+            // Move the arm up
+            armPower = 1.0;
+        } else if (gamepad1.dpad_down) {
+            // Move the arm down
+            armPower = -1.0;
+        }
+
+        // Toggle rotation
+        if (gamepad1.a && !prevA) {
+            toggle = !toggle;
+        }
+        prevA = gamepad1.a;
+        if (toggle) toggleServo.setPosition(0.5);
+        else toggleServo.setPosition(0);
+
         // Send calculated power to wheels
         leftFrontDrive.setPower(leftFrontPower);
         rightFrontDrive.setPower(rightFrontPower);
         leftBackDrive.setPower(leftBackPower);
         rightBackDrive.setPower(rightBackPower);
 
-        // Good place to handle any other logic for things like claws or arms.
+        // Send calculated power to arm
+        armMotor.setPower(armPower);
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime);
