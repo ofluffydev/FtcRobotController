@@ -21,7 +21,7 @@ apply plugin: 'com.android.application'
 
 android {
 
-    compileSdkVersion 34
+    compileSdkVersion 30
 
     signingConfigs {
         release {
@@ -89,7 +89,6 @@ android {
             signingConfig signingConfigs.release
 
             ndk {
-                //noinspection ChromeOsAbiSupport
                 abiFilters "armeabi-v7a", "arm64-v8a"
             }
         }
@@ -97,7 +96,6 @@ android {
             debuggable true
             jniDebuggable true
             ndk {
-                //noinspection ChromeOsAbiSupport
                 abiFilters "armeabi-v7a", "arm64-v8a"
             }
         }
@@ -105,19 +103,14 @@ android {
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     packagingOptions {
         pickFirst '**/*.so'
-    }
-    sourceSets.main {
-        jni.srcDirs = []
-        jniLibs.srcDir rootProject.file('libs')
     }
     ndkVersion '21.3.6528147'
 }
 
 repositories {
 }
-

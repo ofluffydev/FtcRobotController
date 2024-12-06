@@ -69,7 +69,4 @@ public class DriverControlledDuo extends OpMode {
         return new DrivePowers(leftFrontPower, rightFrontPower, leftBackPower, rightBackPower);
     }
 
-    public record DrivePowers(double leftFrontPower, double rightFrontPower, double leftBackPower,
-                              double rightBackPower) {
-    }
 }
